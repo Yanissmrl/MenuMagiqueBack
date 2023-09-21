@@ -1,19 +1,25 @@
 <?php
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: *");
+header("Access-Control-Allow-Methods: *");
 header('Content-Type: application/json');
 
-function getReceipes() {
+function getRecipesWithIngredients() {
     try {
         $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
         $retour["success"] = true;
         $retour["message"] = "Connexion à la base de données réussie";
 
-        $requete = $pdo->prepare("SELECT * FROM `receipes`");
+        $requete = $pdo->prepare("SELECT r.Receipe_Id, r.Receipe_Title, r.Receipe_Desc, GROUP_CONCAT(i.Name SEPARATOR ', ') AS Ingredients
+                                    FROM receipes AS r
+                                    JOIN recipe_ingredients AS ri ON r.Receipe_Id = ri.Recipe_Id
+                                    JOIN ingredients AS i ON ri.Ingredient_Id = i.Ingredients_Id
+                                    GROUP BY r.Receipe_Id");
         $requete->execute();
         $resultats = $requete->fetchAll();
 
         $retour["success"] = true;
-        $retour["message"] = "Voici les recettes";
-        $retour["results"]["nb"] = count($resultats);
+        $retour["message"] = "Voici les recettes avec leurs ingrédients";
         $retour["results"] = $resultats;
     } catch (Exception $e) {
         $retour["success"] = false;
@@ -102,12 +108,78 @@ function addUser($User_uid, $User_email, $User_password) {
     return $retour;
 }
 
+function addRecipeWithIngredients($data) {
+    try {
+        $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
+        $retour["success"] = true;
+        $retour["message"] = "Connexion à la base de données réussie";
+        $receipeTitle = $data['Receipe_Title'];
+        $receipeDesc = $data['Receipe_Desc'];
+
+        $receipeInsertQuery = "INSERT INTO receipes (Receipe_Title, Receipe_Desc) VALUES (:Receipe_Title, :Receipe_Desc)";
+        $receipeInsertStmt = $pdo->prepare($receipeInsertQuery);
+        $receipeInsertStmt->bindParam(':Receipe_Title', $receipeTitle);
+        $receipeInsertStmt->bindParam(':Receipe_Desc', $receipeDesc);
+        $receipeInsertStmt->execute();
+
+        $receipeId = $pdo->lastInsertId();
+
+        $ingredients = $data['Ingredients'];
+        foreach ($ingredients as $ingredient) {
+            $ingredientId = $ingredient['Ingredient_Id'];
+
+            $ingredientInsertQuery = "INSERT INTO recipe_ingredients (Recipe_Id, Ingredient_Id) VALUES (:Recipe_Id, :Ingredient_Id)";
+            $ingredientInsertStmt = $pdo->prepare($ingredientInsertQuery);
+            $ingredientInsertStmt->bindParam(':Recipe_Id', $receipeId);
+            $ingredientInsertStmt->bindParam(':Ingredient_Id', $ingredientId);
+            $ingredientInsertStmt->execute();
+        }
+
+        $retour["success"] = true;
+        $retour["message"] = "Recette ajoutée avec succès";
+    } catch (Exception $e) {
+        $retour["success"] = false;
+        $retour["message"] = "Erreur lors de l'ajout de la recette";
+    }
+
+    return $retour;
+}
+
+function loginUser($email, $password) {
+    try {
+        $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
+
+        $requete = $pdo->prepare("SELECT * FROM `users` WHERE `User_uid` = ?");
+        $requete->execute([$email]);
+        $utilisateur = $requete->fetch();
+
+        if ($utilisateur && password_verify($password, $utilisateur['User_password'])) {
+            $retour["success"] = true;
+            $retour["message"] = "Connexion réussie";
+        } else {
+            $retour["success"] = false;
+            $retour["message"] = "Nom d'utilisateur ou mot de passe incorrect";
+        }
+    } catch (Exception $e) {
+        $retour["success"] = false;
+        $retour["message"] = "Erreur lors de la connexion : " . $e->getMessage();
+    }
+
+    return $retour;
+}
+
 /////////////////////////////////////////////// 
 
 //Routes recettes
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['route']) && $_GET['route'] === 'get_receipe') {
-    $resultat = getReceipes();
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['route']) && $_GET['route'] === 'get_recipes_with_ingredients') {
+    $resultat = getRecipesWithIngredients();
+    echo json_encode($resultat);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['route'] === 'add_recipe') {
+    $postData = json_decode(file_get_contents('php://input'), true);
+    $resultat = addRecipeWithIngredients($postData);
     echo json_encode($resultat);
 }
 
@@ -148,6 +220,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['rou
         echo json_encode(array("message" => "Données incomplètes"));
     }
 } 
+
+// Route login
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['route'] === 'login') {
+    $data = json_decode(file_get_contents("php://input"));
+
+    if (isset($data->User_uid) && isset($data->User_password)) {
+        $resultat = loginUser($data->User_uid, $data->User_password);
+        echo json_encode($resultat);
+    } else {
+        http_response_code(400);
+        echo json_encode(array("message" => "Données incomplètes"));
+    }
+}
+
 
 
 ?>
