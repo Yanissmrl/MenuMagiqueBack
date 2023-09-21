@@ -1,7 +1,11 @@
 <?php
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: *");
+header("Access-Control-Allow-Methods: *");
 header('Content-Type: application/json');
 
-function getReceipes() {
+function getReceipes()
+{
     try {
         $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
         $retour["success"] = true;
@@ -23,7 +27,8 @@ function getReceipes() {
     return $retour;
 }
 
-function getIngredients() {
+function getIngredients()
+{
     try {
         $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
         $retour["success"] = true;
@@ -45,7 +50,8 @@ function getIngredients() {
     return $retour;
 }
 
-function getUser() {
+function getUser()
+{
     try {
         $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
         $retour["success"] = true;
@@ -67,7 +73,8 @@ function getUser() {
     return $retour;
 }
 
-function addIngredient($Name) {
+function addIngredient($Name)
+{
     try {
         $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
 
@@ -84,7 +91,8 @@ function addIngredient($Name) {
     return $retour;
 }
 
-function addUser($User_uid, $User_email, $User_password) {
+function addUser($User_uid, $User_email, $User_password)
+{
     try {
         $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
 
@@ -116,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['route']) && $_GET['rout
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['route']) && $_GET['route'] === 'get_ingredient') {
     $resultat = getIngredients();
     echo json_encode($resultat);
-} 
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['route'] === 'create_ingredient') {
     $data = json_decode(file_get_contents("php://input"));
@@ -128,14 +136,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['rou
         http_response_code(400);
         echo json_encode(array("message" => "Données incomplètes"));
     }
-} 
+}
 
 //Route users
 // Gestion des routes
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['route']) && $_GET['route'] === 'get_user') {
     $resultat = getUser();
     echo json_encode($resultat);
-} 
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['route'] === 'create_user') {
     $data = json_decode(file_get_contents("php://input"));
@@ -147,7 +155,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['rou
         http_response_code(400);
         echo json_encode(array("message" => "Données incomplètes"));
     }
-} 
-
-
-?>
+}
