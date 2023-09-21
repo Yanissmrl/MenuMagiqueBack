@@ -1,6 +1,28 @@
 <?php
 header('Content-Type: application/json');
 
+function getReceipes() {
+    try {
+        $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
+        $retour["success"] = true;
+        $retour["message"] = "Connexion à la base de données réussie";
+
+        $requete = $pdo->prepare("SELECT * FROM `receipes`");
+        $requete->execute();
+        $resultats = $requete->fetchAll();
+
+        $retour["success"] = true;
+        $retour["message"] = "Voici les recettes";
+        $retour["results"]["nb"] = count($resultats);
+        $retour["results"] = $resultats;
+    } catch (Exception $e) {
+        $retour["success"] = false;
+        $retour["message"] = "Connexion à la base de données impossible";
+    }
+
+    return $retour;
+}
+
 function getIngredients() {
     try {
         $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
@@ -14,7 +36,7 @@ function getIngredients() {
         $retour["success"] = true;
         $retour["message"] = "Voici les ingrédients";
         $retour["results"]["nb"] = count($resultats);
-        $retour["results"]["ingredients"] = $resultats;
+        $retour["results"] = $resultats;
     } catch (Exception $e) {
         $retour["success"] = false;
         $retour["message"] = "Connexion à la base de données impossible";
@@ -23,11 +45,84 @@ function getIngredients() {
     return $retour;
 }
 
+function addIngredient($Name) {
+    try {
+        $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
+
+        $requete = $pdo->prepare("INSERT INTO `ingredients` (`Name`) VALUES (?)");
+        $requete->execute([$Name]);
+
+        $retour["success"] = true;
+        $retour["message"] = "Ingrédient ajouté avec succès";
+    } catch (Exception $e) {
+        $retour["success"] = false;
+        $retour["message"] = "Erreur lors de l'ajout de l'ingrédient : " . $e->getMessage();
+    }
+
+    return $retour;
+}
+
+function addUser($User_uid, $User_email, $User_password) {
+    try {
+        $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
+
+        $requete = $pdo->prepare("INSERT INTO `ingredients` (`User_uid`, `User_email`, `User_password`) VALUES (?, ?, ?)");
+        $requete->execute([$User_uid, $User_email, $User_password]);
+
+        $retour["success"] = true;
+        $retour["message"] = "Utilisateur ajouté avec succès";
+    } catch (Exception $e) {
+        $retour["success"] = false;
+        $retour["message"] = "Erreur lors de l'ajout de l'utilisateur : " . $e->getMessage();
+    }
+
+    return $retour;
+}
+
+/////////////////////////////////////////////// 
+
+//Routes recettes
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $resultat = getIngredients();
+    $resultat = getReceipes();
     echo json_encode($resultat);
 } else {
     http_response_code(405);
     echo json_encode(array("message" => "Méthode non autorisée"));
 }
+
+//Routes ingrédients
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $resultat = getIngredients();
+    echo json_encode($resultat);
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/add_ingredient') {
+    $data = json_decode(file_get_contents("php://input"));
+
+    if (isset($data->Name)) {
+        $resultat = addIngredient($data->Name);
+        echo json_encode($resultat);
+    } else {
+        http_response_code(400);
+        echo json_encode(array("message" => "Données incomplètes"));
+    }
+} else {
+    http_response_code(405);
+    echo json_encode(array("message" => "Méthode non autorisée"));
+}
+
+//Route users
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/add_user') {
+    $data = json_decode(file_get_contents("php://input"));
+
+    if (isset($data->User_uid) && isset($data->User_email) && isset($data->User_password)) {
+        $resultat = addUser($data->User_uid, $data->User_email, $data->User_password);
+        echo json_encode($resultat);
+    } else {
+        http_response_code(400);
+        echo json_encode(array("message" => "Données incomplètes"));
+    }
+}
+
 ?>
