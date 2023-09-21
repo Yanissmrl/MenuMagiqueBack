@@ -89,7 +89,8 @@ function addUser($User_uid, $User_email, $User_password) {
         $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
 
         $requete = $pdo->prepare("INSERT INTO `users` (`User_uid`, `User_email`, `User_password`) VALUES (?, ?, ?)");
-        $requete->execute([$User_uid, $User_email, $User_password]);
+        $hashedPwd = password_hash($User_password, PASSWORD_DEFAULT);
+        $requete->execute([$User_uid, $User_email, $hashedPwd]);
 
         $retour["success"] = true;
         $retour["message"] = "Utilisateur ajouté avec succès";
