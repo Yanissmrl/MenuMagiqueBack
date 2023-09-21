@@ -45,6 +45,28 @@ function getIngredients() {
     return $retour;
 }
 
+function getUser() {
+    try {
+        $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
+        $retour["success"] = true;
+        $retour["message"] = "Connexion à la base de données réussie";
+
+        $requete = $pdo->prepare("SELECT * FROM `users`");
+        $requete->execute();
+        $resultats = $requete->fetchAll();
+
+        $retour["success"] = true;
+        $retour["message"] = "Voici les utilisateurs";
+        $retour["results"]["nb"] = count($resultats);
+        $retour["results"] = $resultats;
+    } catch (Exception $e) {
+        $retour["success"] = false;
+        $retour["message"] = "Connexion à la base de données impossible";
+    }
+
+    return $retour;
+}
+
 function addIngredient($Name) {
     try {
         $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
@@ -66,7 +88,7 @@ function addUser($User_uid, $User_email, $User_password) {
     try {
         $pdo = new PDO('mysql:host=localhost;dbname=menu-magique-bdd;', 'root', '');
 
-        $requete = $pdo->prepare("INSERT INTO `ingredients` (`User_uid`, `User_email`, `User_password`) VALUES (?, ?, ?)");
+        $requete = $pdo->prepare("INSERT INTO `users` (`User_uid`, `User_email`, `User_password`) VALUES (?, ?, ?)");
         $requete->execute([$User_uid, $User_email, $User_password]);
 
         $retour["success"] = true;
@@ -86,9 +108,6 @@ function addUser($User_uid, $User_email, $User_password) {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $resultat = getReceipes();
     echo json_encode($resultat);
-} else {
-    http_response_code(405);
-    echo json_encode(array("message" => "Méthode non autorisée"));
 }
 
 //Routes ingrédients
@@ -96,7 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $resultat = getIngredients();
     echo json_encode($resultat);
-} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['route'] === 'create_ingredient') {
+} 
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['route'] === 'create_ingredient') {
     $data = json_decode(file_get_contents("php://input"));
 
     if (isset($data->Name)) {
@@ -106,12 +127,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         http_response_code(400);
         echo json_encode(array("message" => "Données incomplètes"));
     }
-} else {
-    http_response_code(405);
-    echo json_encode(array("message" => "Méthode non autorisée"));
-}
+} 
 
 //Route users
+// Gestion des routes
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['route'])) {
+    $resultat = getUser();
+    echo json_encode($resultat);
+} 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['route'] === 'create_user') {
     $data = json_decode(file_get_contents("php://input"));
@@ -123,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['rou
         http_response_code(400);
         echo json_encode(array("message" => "Données incomplètes"));
     }
-}
+} 
+
 
 ?>
