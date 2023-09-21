@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $resultat = getIngredients();
     echo json_encode($resultat);
-} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/add_ingredient') {
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['route'] === 'create_ingredient') {
     $data = json_decode(file_get_contents("php://input"));
 
     if (isset($data->Name)) {
@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 //Route users
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/add_user') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['route'] === 'create_user') {
     $data = json_decode(file_get_contents("php://input"));
 
     if (isset($data->User_uid) && isset($data->User_email) && isset($data->User_password)) {
