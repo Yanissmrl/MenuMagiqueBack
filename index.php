@@ -106,14 +106,14 @@ function addUser($User_uid, $User_email, $User_password) {
 
 //Routes recettes
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['route']) && $_GET['route'] === 'get_receipe') {
     $resultat = getReceipes();
     echo json_encode($resultat);
 }
 
 //Routes ingrédients
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['route']) && $_GET['route'] === 'get_ingredient') {
     $resultat = getIngredients();
     echo json_encode($resultat);
 } 
@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['route']) && $_GET['rou
 
 //Route users
 // Gestion des routes
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['route'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['route']) && $_GET['route'] === 'get_user') {
     $resultat = getUser();
     echo json_encode($resultat);
 } 
